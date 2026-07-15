@@ -1,0 +1,56 @@
+name: PurpuBoost Builder
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install pyinstaller requests
+        pip install pillow  # для работы с иконками
+
+    - name: Rename script to PurpuBoost.py
+      run: |
+        copy FPS.py PurpuBoost.py
+
+    - name: Create .spec file with icon
+      run: |
+        echo "a = Analysis(['PurpuBoost.py'], pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False)" > PurpuBoost.spec
+        echo "pyz = PYZ(a.pure)" >> PurpuBoost.spec
+        echo "exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], name='PurpuBoost', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, upx_exclude=[], runtime_tmpdir=None, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None, icon='icon.ico')" >> PurpuBoost.spec
+
+    - name: Build EXE with icon
+      run: |
+        pyinstaller PurpuBoost.spec --noconsole
+        # Если иконка не найдена — сборка всё равно пройдёт (но без иконки)
+
+    - name: Upload EXE as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PurpuBoost_Exe
+        path: dist/PurpuBoost.exe
+
+    - name: Create Release and upload
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: dist/PurpuBoost.exe
+        tag_name: v1.0.${{ github.run_number }}
+        name: PurpuBoost v1.0.${{ github.run_number }}
+        body: "Готовый EXE без консоли. Иконка вшита."
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
