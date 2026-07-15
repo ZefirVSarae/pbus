@@ -19,22 +19,21 @@ jobs:
     - name: Install dependencies
       run: |
         pip install pyinstaller requests
-        pip install pillow  # для работы с иконками
+        pip install pillow
 
     - name: Rename script to PurpuBoost.py
       run: |
         copy FPS.py PurpuBoost.py
 
-    - name: Create .spec file with icon
+    - name: Create .spec file with icon (console=False уже внутри)
       run: |
         echo "a = Analysis(['PurpuBoost.py'], pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False)" > PurpuBoost.spec
         echo "pyz = PYZ(a.pure)" >> PurpuBoost.spec
         echo "exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], name='PurpuBoost', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, upx_exclude=[], runtime_tmpdir=None, console=False, disable_windowed_traceback=False, argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None, icon='icon.ico')" >> PurpuBoost.spec
 
-    - name: Build EXE with icon
+    - name: Build EXE (без --noconsole, он уже в spec)
       run: |
-        pyinstaller PurpuBoost.spec --noconsole
-        # Если иконка не найдена — сборка всё равно пройдёт (но без иконки)
+        pyinstaller PurpuBoost.spec
 
     - name: Upload EXE as artifact
       uses: actions/upload-artifact@v4
